@@ -1,147 +1,123 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback, Suspense, lazy, useReducer } from 'react';
 import Link from 'next/link';
-import IdentificacionArea from '../components/componentsPrincipal/IdentificacionArea';
-import DimensionesArea from '../components/componentsPrincipal/DimensionesArea';
-import Luminaria from '../components/componentsPrincipal/Luminaria';
-import PercepcionTrabajo from '../components/componentsPrincipal/PercepcionTrabajo';
-import FormularioPuestos from '../components/componentsPrincipal/FormularioPuestos';
+import localforage from 'localforage';
+
+const IdentificacionArea = lazy(() => import('../components/componentsPrincipal/IdentificacionArea'));
+const DimensionesArea = lazy(() => import('../components/componentsPrincipal/DimensionesArea'));
+const Luminaria = lazy(() => import('../components/componentsPrincipal/Luminaria'));
+const PercepcionTrabajo = lazy(() => import('../components/componentsPrincipal/PercepcionTrabajo'));
+const FormularioPuestos = lazy(() => import('../components/componentsPrincipal/FormularioPuestos'));
 import ResumenAreas from '../components/componentsPrincipal/ResumenAreas';
 
+const initialState = {
+  areas: [],
+  currentAreaIndex: 0,
+  activeSection: null,
+  successMessage: '',
+  showSummary: false,
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_AREAS':
+      return { ...state, areas: action.payload };
+    case 'ADD_AREA':
+      return {
+        ...state,
+        areas: [...state.areas, getNewArea(state.areas.length + 1)],
+        currentAreaIndex: state.areas.length,
+        activeSection: null,
+        successMessage: '',
+      };
+    case 'DELETE_AREA':
+      return {
+        ...state,
+        areas: state.areas.filter((area) => area.idArea !== action.payload),
+        currentAreaIndex: state.currentAreaIndex > 0 ? state.currentAreaIndex - 1 : 0,
+        successMessage: 'Área eliminada con éxito',
+      };
+    case 'UPDATE_AREA':
+      return {
+        ...state,
+        areas: state.areas.map((area, index) =>
+          index === state.currentAreaIndex ? { ...area, ...action.payload } : area
+        ),
+      };
+    case 'SET_SUCCESS_MESSAGE':
+      return { ...state, successMessage: action.payload };
+    case 'TOGGLE_SECTION':
+      return { ...state, activeSection: state.activeSection === action.payload ? null : action.payload };
+    case 'SET_SHOW_SUMMARY':
+      return { ...state, showSummary: action.payload };
+    case 'SET_CURRENT_AREA_INDEX':
+      return { ...state, currentAreaIndex: action.payload };
+    default:
+      return state;
+  }
+}
+
+const getNewArea = (id) => ({
+  idArea: id,
+  areaIluminada: '',
+  numPuntosEvaluar: '',
+  tipoIluminacion: 'ARTIFICIAL',
+  tipoSuperficie: '',
+  altura: '',
+  largo: '',
+  ancho: '',
+  indiceArea: 0,
+  tipoLuminaria: '',
+  potencia: '',
+  distribucion: 'LINEAL',
+  iluminacionLocalizada: 'SÍ',
+  cantidad: '',
+  nombreTrabajador: '',
+  descripcion: '',
+  reportes: '',
+  puestos: [
+    {
+      id: 1,
+      puestoTrabajador: '',
+      numTrabajadores: '',
+      descripcionActividades: '',
+      nivelMinimoIluminacion: '',
+      tareaVisual: '',
+    },
+  ],
+  descripcionSuperficie: '',
+  mediciones: [],
+});
+
 export default function Reconocimiento() {
-  const [areas, setAreas] = useState([]);
-  const [currentAreaIndex, setCurrentAreaIndex] = useState(0);
-  const [visibleSections, setVisibleSections] = useState({
-    identificacion: false,
-    dimensiones: false,
-    luminarias: false,
-    percepcion: false,
-    puestoGeneral: false,
-  });
-  const [successMessage, setSuccessMessage] = useState('');
-  const [showSummary, setShowSummary] = useState(false);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedAreas = localStorage.getItem('areas');
-      if (savedAreas) {
-        setAreas(JSON.parse(savedAreas));
-      } else {
-        setAreas([getNewArea(1)]);
-      }
+      localforage.getItem('areas').then((savedAreas) => {
+        if (savedAreas) {
+          dispatch({ type: 'SET_AREAS', payload: savedAreas });
+        } else {
+          dispatch({ type: 'SET_AREAS', payload: [getNewArea(1)] });
+        }
+      });
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && areas.length > 0) {
-      localStorage.setItem('areas', JSON.stringify(areas));
-      console.log('Datos guardados en localStorage:', areas);
-    }
-  }, [areas]);
-
-  const getNewArea = (id) => ({
-    idArea: id,
-    areaIluminada: '',
-    numPuntosEvaluar: '',
-    tipoIluminacion: 'ARTIFICIAL',
-    tipoSuperficie: '',
-    altura: '',
-    largo: '',
-    ancho: '',
-    indiceArea: 0,
-    tipoLuminaria: '',
-    potencia: '',
-    distribucion: 'LINEAL',
-    iluminacionLocalizada: 'SÍ',
-    cantidad: '',
-    nombreTrabajador: '',
-    descripcion: '',
-    reportes: '',
-    puestos: [
-      {
-        id: 1,
-        puestoTrabajador: '',
-        numTrabajadores: '',
-        descripcionActividades: '',
-        nivelMinimoIluminacion: '',
-        tareaVisual: '',
-      },
-    ],
-    descripcionSuperficie: '',
-    mediciones: [],
-  });
-
-  const addArea = () => {
-    if (!validateForm()) {
-      return;
-    }
-    setAreas((prevAreas) => [...prevAreas, getNewArea(prevAreas.length + 1)]);
-    setCurrentAreaIndex(areas.length);
-    setVisibleSections({
-      identificacion: false,
-      dimensiones: false,
-      luminarias: false,
-      percepcion: false,
-      puestoGeneral: false,
-    });
-    setSuccessMessage('');
-  };
-
-  const deleteArea = (id) => {
-    setAreas((prevAreas) => prevAreas.filter((area) => area.idArea !== id));
-    setCurrentAreaIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : 0));
-    setSuccessMessage('Área eliminada con éxito');
-  };
-
-  const toggleSection = (section) => {
-    setVisibleSections({
-      identificacion: false,
-      dimensiones: false,
-      luminarias: false,
-      percepcion: false,
-      puestoGeneral: false,
-      [section]: !visibleSections[section],
-    });
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAreas((prevAreas) =>
-      prevAreas.map((area, index) =>
-        index === currentAreaIndex ? { ...area, [name]: value } : area
-      )
-    );
-  };
-
-  const handleAreaSelect = (selectedAreaId) => {
-    setCurrentAreaIndex(areas.findIndex((area) => area.idArea === parseInt(selectedAreaId)));
-  };
-
-  useEffect(() => {
-    if (areas[currentAreaIndex]) {
-      const { altura, largo, ancho, indiceArea: prevIndiceArea } = areas[currentAreaIndex];
-      const alturaParsed = parseFloat(altura) || 0;
-      const largoParsed = parseFloat(largo) || 0;
-      const anchoParsed = parseFloat(ancho) || 0;
-
-      let newIndiceArea = 0;
-      if (alturaParsed > 0 && (largoParsed + anchoParsed) > 0) {
-        newIndiceArea = (largoParsed * anchoParsed) / (alturaParsed * (largoParsed + anchoParsed));
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && state.areas.length > 0) {
+        localforage.setItem('areas', state.areas).then(() => {
+          console.log('Datos guardados en localforage:', state.areas);
+        });
       }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [state.areas]);
 
-      if (newIndiceArea !== prevIndiceArea) {
-        setAreas((prevAreas) =>
-          prevAreas.map((area, index) =>
-            index === currentAreaIndex ? { ...area, indiceArea: newIndiceArea } : area
-          )
-        );
-      }
-    }
-  }, [areas, currentAreaIndex]);
-
-  const validateForm = () => {
-    if (!areas[currentAreaIndex]) return false;
-    const area = areas[currentAreaIndex];
+  const validateForm = useCallback(() => {
+    if (!state.areas[state.currentAreaIndex]) return false;
+    const area = state.areas[state.currentAreaIndex];
     const requiredFields = [
       'areaIluminada',
       'numPuntosEvaluar',
@@ -157,115 +133,162 @@ export default function Reconocimiento() {
 
     for (let field of requiredFields) {
       if (!area[field] || area[field].toString().trim() === '') {
-        setSuccessMessage(`Por favor, completa el campo: ${field}`);
+        dispatch({ type: 'SET_SUCCESS_MESSAGE', payload: `Por favor, completa el campo: ${field}` });
         return false;
       }
     }
-    setSuccessMessage('');
+    dispatch({ type: 'SET_SUCCESS_MESSAGE', payload: '' });
     return true;
-  };
+  }, [state.areas, state.currentAreaIndex]);
 
-  const handleSaveAll = () => {
-    if (!validateForm()) {
-      return;
-    }
-    console.log('Datos guardados desde el botón principal:', areas);
-    setSuccessMessage('Guardado con éxito');
-  };
-
-  const goToPreviousArea = () => {
-    if (currentAreaIndex > 0) {
-      setCurrentAreaIndex((prevIndex) => prevIndex - 1);
-      setVisibleSections({
-        identificacion: false,
-        dimensiones: false,
-        luminarias: false,
-        percepcion: false,
-        puestoGeneral: false,
-      });
-    }
-  };
-
-  const goToNextArea = () => {
-    if (currentAreaIndex < areas.length - 1) {
-      setCurrentAreaIndex((prevIndex) => prevIndex + 1);
-      setVisibleSections({
-        identificacion: false,
-        dimensiones: false,
-        luminarias: false,
-        percepcion: false,
-        puestoGeneral: false,
-      });
-    }
-  };
-
-  const handleShowSummary = () => {
-    setShowSummary(true);
-  };
-
-  const clearLocalStorage = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('areas');
-      setAreas([getNewArea(1)]);
-      setCurrentAreaIndex(0);
-      console.log('Local storage limpiado');
-    }
-  };
-
-  const calculateMinAreas = (indiceArea) => {
+  const calculateMinAreas = useCallback((indiceArea) => {
     if (indiceArea < 1) return 4;
     if (indiceArea < 2) return 9;
     if (indiceArea < 3) return 16;
     return 25;
-  };
+  }, []);
 
-  const calculateMaxAreas = (indiceArea) => {
+  const calculateMaxAreas = useCallback((indiceArea) => {
     if (indiceArea < 1) return 6;
     if (indiceArea < 2) return 12;
     if (indiceArea < 3) return 20;
     return 30;
+  }, []);
+
+  const addArea = useCallback(() => {
+    if (validateForm()) {
+      dispatch({ type: 'ADD_AREA' });
+    }
+  }, [validateForm]);
+
+  const deleteArea = useCallback((id) => {
+    dispatch({ type: 'DELETE_AREA', payload: id });
+  }, []);
+
+  const toggleSection = useCallback((section) => {
+    dispatch({ type: 'TOGGLE_SECTION', payload: section });
+  }, []);
+
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    dispatch({
+      type: 'UPDATE_AREA',
+      payload: { [name]: value },
+    });
+  }, []);
+
+  const handleAreaSelect = useCallback((selectedAreaId) => {
+    dispatch({
+      type: 'SET_CURRENT_AREA_INDEX',
+      payload: state.areas.findIndex((area) => area.idArea === parseInt(selectedAreaId)),
+    });
+  }, [state.areas]);
+
+  const handleSaveAll = useCallback(() => {
+    if (validateForm()) {
+      console.log('Datos guardados desde el botón principal:', state.areas);
+      dispatch({ type: 'SET_SUCCESS_MESSAGE', payload: 'Guardado con éxito' });
+    }
+  }, [validateForm, state.areas]);
+
+  const goToPreviousArea = useCallback(() => {
+    if (state.currentAreaIndex > 0) {
+      dispatch({ type: 'SET_CURRENT_AREA_INDEX', payload: state.currentAreaIndex - 1 });
+    }
+  }, [state.currentAreaIndex]);
+
+  const goToNextArea = useCallback(() => {
+    if (state.currentAreaIndex < state.areas.length - 1) {
+      dispatch({ type: 'SET_CURRENT_AREA_INDEX', payload: state.currentAreaIndex + 1 });
+    }
+  }, [state.currentAreaIndex, state.areas.length]);
+
+  const handleShowSummary = useCallback(() => {
+    dispatch({ type: 'SET_SHOW_SUMMARY', payload: true });
+  }, []);
+
+  const clearLocalStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localforage.removeItem('areas').then(() => {
+        dispatch({ type: 'SET_AREAS', payload: [getNewArea(1)] });
+        dispatch({ type: 'SET_CURRENT_AREA_INDEX', payload: 0 });
+        console.log('Local storage limpiado');
+      });
+    }
+  }, []);
+
+  const calculateIndiceArea = (altura, largo, ancho) => {
+    const alturaParsed = parseFloat(altura) || 0;
+    const largoParsed = parseFloat(largo) || 0;
+    const anchoParsed = parseFloat(ancho) || 0;
+
+    if (alturaParsed > 0 && largoParsed + anchoParsed > 0) {
+      return (largoParsed * anchoParsed) / (alturaParsed * (largoParsed + anchoParsed));
+    }
+    return 0;
   };
+
+  useEffect(() => {
+    if (state.areas[state.currentAreaIndex]) {
+      const { altura, largo, ancho, indiceArea: prevIndiceArea } =
+        state.areas[state.currentAreaIndex];
+      const newIndiceArea = calculateIndiceArea(altura, largo, ancho);
+
+      if (newIndiceArea !== prevIndiceArea) {
+        dispatch({
+          type: 'UPDATE_AREA',
+          payload: { indiceArea: newIndiceArea },
+        });
+      }
+    }
+  }, [
+    state.areas[state.currentAreaIndex]?.altura,
+    state.areas[state.currentAreaIndex]?.largo,
+    state.areas[state.currentAreaIndex]?.ancho,
+  ]);
 
   return (
     <div className="container mx-auto p-4 bg-white dark:bg-gray-900 max-w-3xl rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4 text-black dark:text-white text-center">RECONOCIMIENTO</h1>
-      {successMessage && (
-        <div className={`p-2 rounded mb-4 text-center mx-auto w-3/4 ${successMessage.includes('éxito') ? 'bg-green-500' : 'bg-red-500'} text-white`}>
-          {successMessage}
+      {state.successMessage && (
+        <div className={`p-2 rounded mb-4 text-center mx-auto w-3/4 ${state.successMessage.includes('éxito') ? 'bg-green-500' : 'bg-red-500'} text-white`}>
+          {state.successMessage}
         </div>
       )}
-      {!showSummary ? (
+      {!state.showSummary ? (
         <form className="space-y-4">
-          {areas.length > 0 && currentAreaIndex < areas.length && (
+          {state.areas.length > 0 && state.currentAreaIndex < state.areas.length && (
             <>
-              <h2 className="text-xl font-bold mb-4 text-black dark:text-white text-center">Área {areas[currentAreaIndex].idArea}</h2>
+              <h2 className="text-xl font-bold mb-4 text-black dark:text-white text-center">Área {state.areas[state.currentAreaIndex].idArea}</h2>
               <div className="space-y-2">
-                <IdentificacionArea
-                  formData={areas[currentAreaIndex]}
-                  handleChange={handleChange}
-                  visible={visibleSections.identificacion}
-                  toggleSection={() => toggleSection('identificacion')}
-                />
-                <DimensionesArea
-                  formData={areas[currentAreaIndex]}
-                  handleChange={handleChange}
-                  visible={visibleSections.dimensiones}
-                  toggleSection={() => toggleSection('dimensiones')}
-                  calculateMinAreas={calculateMinAreas}
-                  calculateMaxAreas={calculateMaxAreas}
-                />
-                <Luminaria
-                  formData={areas[currentAreaIndex]}
-                  handleChange={handleChange}
-                  visible={visibleSections.luminarias}
-                  toggleSection={() => toggleSection('luminarias')}
-                />
-                <PercepcionTrabajo
-                  formData={areas[currentAreaIndex]}
-                  handleChange={handleChange}
-                  visible={visibleSections.percepcion}
-                  toggleSection={() => toggleSection('percepcion')}
-                />
+                <Suspense fallback={<div>Cargando componentes, por favor espere...</div>}>
+                  <IdentificacionArea
+                    formData={state.areas[state.currentAreaIndex]}
+                    handleChange={handleChange}
+                    visible={state.activeSection === 'identificacion'}
+                    toggleSection={() => toggleSection('identificacion')}
+                  />
+                  <DimensionesArea
+                    formData={state.areas[state.currentAreaIndex]}
+                    handleChange={handleChange}
+                    visible={state.activeSection === 'dimensiones'}
+                    toggleSection={() => toggleSection('dimensiones')}
+                    calculateMinAreas={calculateMinAreas}
+                    calculateMaxAreas={calculateMaxAreas}
+                  />
+                  <Luminaria
+                    formData={state.areas[state.currentAreaIndex]}
+                    handleChange={handleChange}
+                    visible={state.activeSection === 'luminarias'}
+                    toggleSection={() => toggleSection('luminarias')}
+                  />
+                  <PercepcionTrabajo
+                    formData={state.areas[state.currentAreaIndex]}
+                    handleChange={handleChange}
+                    visible={state.activeSection === 'percepcion'}
+                    toggleSection={() => toggleSection('percepcion')}
+                  />
+                </Suspense>
                 <button
                   type="button"
                   className="bg-red-500 text-white w-full px-4 py-2 rounded-lg"
@@ -273,18 +296,19 @@ export default function Reconocimiento() {
                 >
                   Datos del Puesto
                 </button>
-                {visibleSections.puestoGeneral && (
-                  <FormularioPuestos
-                    puestos={areas[currentAreaIndex].puestos}
-                    handleSavePuestos={(updatedPuestos) => {
-                      setAreas((prevAreas) =>
-                        prevAreas.map((area, index) =>
-                          index === currentAreaIndex ? { ...area, puestos: updatedPuestos } : area
-                        )
-                      );
-                      console.log('Datos de puestos guardados:', updatedPuestos);
-                    }}
-                  />
+                {state.activeSection === 'puestoGeneral' && (
+                  <Suspense fallback={<div>Cargando datos del puesto...</div>}>
+                    <FormularioPuestos
+                      puestos={state.areas[state.currentAreaIndex].puestos}
+                      handleSavePuestos={(updatedPuestos) => {
+                        dispatch({
+                          type: 'UPDATE_AREA',
+                          payload: { puestos: updatedPuestos },
+                        });
+                        console.log('Datos de puestos guardados:', updatedPuestos);
+                      }}
+                    />
+                  </Suspense>
                 )}
               </div>
             </>
@@ -303,7 +327,7 @@ export default function Reconocimiento() {
               type="button"
               onClick={goToPreviousArea}
               className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto"
-              disabled={currentAreaIndex === 0}
+              disabled={state.currentAreaIndex === 0}
             >
               Área Anterior
             </button>
@@ -311,7 +335,7 @@ export default function Reconocimiento() {
               type="button"
               onClick={goToNextArea}
               className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto"
-              disabled={currentAreaIndex === areas.length - 1}
+              disabled={state.currentAreaIndex === state.areas.length - 1}
             >
               Siguiente Área
             </button>
@@ -324,18 +348,20 @@ export default function Reconocimiento() {
             </button>
             <button
               type="button"
-              onClick={() => deleteArea(areas[currentAreaIndex].idArea)}
+              onClick={() => deleteArea(state.areas[state.currentAreaIndex].idArea)}
               className="bg-red-500 text-white px-4 py-2 rounded sm:w-auto"
-              disabled={areas.length === 1}
+              disabled={state.areas.length === 1}
             >
               Eliminar Área
             </button>
           </div>
           <div className="flex flex-wrap justify-center gap-2 mt-4">
-            <Link href={{
-              pathname: '/mediciones',
-              query: { areaIluminada: areas[currentAreaIndex]?.areaIluminada || '' }
-            }}>
+            <Link
+              href={{
+                pathname: '/mediciones',
+                query: { areaIluminada: state.areas[state.currentAreaIndex]?.areaIluminada || '' },
+              }}
+            >
               <button className="bg-orange-500 text-white px-4 py-2 rounded sm:w-auto">Ir a Mediciones</button>
             </Link>
             <button
@@ -357,7 +383,7 @@ export default function Reconocimiento() {
           </div>
         </form>
       ) : (
-        <ResumenAreas areas={areas} setShowSummary={setShowSummary} />
+        <ResumenAreas areas={state.areas} setShowSummary={(value) => dispatch({ type: 'SET_SHOW_SUMMARY', payload: value })} />
       )}
     </div>
   );
