@@ -38,10 +38,6 @@ function ResumenMediciones({ areas, selectedAreaId, handleSummaryAreaSelect, set
                 <td className="py-2 px-4 border-b">{selectedArea.areaIluminada}</td>
               </tr>
               <tr>
-                <td className="py-2 px-4 border-b">Número de Puntos a Evaluar</td>
-                <td className="py-2 px-4 border-b">{selectedArea.numPuntosEvaluar}</td>
-              </tr>
-              <tr>
                 <td className="py-2 px-4 border-b">Tipo de Iluminación</td>
                 <td className="py-2 px-4 border-b">{selectedArea.tipoIluminacion}</td>
               </tr>

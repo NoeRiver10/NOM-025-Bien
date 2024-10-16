@@ -35,18 +35,6 @@ export default function IdAreaMediciones({ formData, handleChange, toggleSection
               className="border p-2 w-full rounded"
             />
           </div>
-          <div className="mb-4">
-            <label className="block mb-1">NÚMERO DE PUNTOS EN ESTE DEPARTAMENETO:</label>
-            <input
-              type="number"
-              name="numeroPuntos"
-              value={formData.numeroPuntos || ''}
-              onChange={handleChange}
-              min="1"
-              required
-              className="border p-2 w-full rounded"
-            />
-          </div>
         </div>
       )}
     </div>

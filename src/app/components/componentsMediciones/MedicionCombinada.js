@@ -1,54 +1,54 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
-function MedicionCombinada({ index, formData, handleMedicionChange, calcularHorarioConsecutivo }) {
+function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioConsecutivo }) {
+  const [mediciones, setMediciones] = useState(formData.mediciones || []);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const numMediciones = formData.cci === 'SÍ' ? 4 : 3;
 
-  // Manejar los cambios de los campos de medicion especificos
-  const handleFieldChange = (medIndex, field, value) => {
-    const updatedMediciones = [...formData.mediciones];
-    if (!updatedMediciones[index]) {
-      updatedMediciones[index] = { mediciones: [] };
-    }
-    if (!updatedMediciones[index].mediciones) {
-      updatedMediciones[index].mediciones = [];
-    }
-    if (!updatedMediciones[index].mediciones[medIndex]) {
-      updatedMediciones[index].mediciones[medIndex] = {};
-    }
-    updatedMediciones[index].mediciones[medIndex][field] = value;
+  useEffect(() => {
+    setMediciones(formData.mediciones || []);
+  }, [formData.mediciones]);
 
-    // Actualizar el formData global
-    handleMedicionChange(index, 'mediciones', updatedMediciones[index].mediciones);
-
-    // Guardar en localStorage
-    const updatedFormData = { ...formData, mediciones: updatedMediciones };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('formData', JSON.stringify(updatedFormData));
-      console.log('Datos guardados en localStorage:', updatedFormData);
+  // Manejar los cambios de los campos de medición específicos
+  const handleFieldChange = (field, value, medIndex = null) => {
+    const updatedMediciones = [...mediciones];
+    if (medIndex === null) {
+      // Actualizar los campos generales (puesto, identificación, etc.)
+      if (!updatedMediciones[currentIndex]) {
+        updatedMediciones[currentIndex] = { mediciones: [] };
+      }
+      updatedMediciones[currentIndex][field] = value;
+    } else {
+      // Actualizar los campos de mediciones específicas
+      if (!updatedMediciones[currentIndex].mediciones) {
+        updatedMediciones[currentIndex].mediciones = [];
+      }
+      if (!updatedMediciones[currentIndex].mediciones[medIndex]) {
+        updatedMediciones[currentIndex].mediciones[medIndex] = {};
+      }
+      updatedMediciones[currentIndex].mediciones[medIndex][field] = value;
     }
 
-    console.log('Datos de medición actualizada:', updatedMediciones[index].mediciones[medIndex]);
+    setMediciones(updatedMediciones);
+    handleMedicionChange(updatedMediciones);
   };
 
-  // Generar automaticamente los horarios para cada punto despues del primero
+  // Generar automáticamente los horarios para cada punto después del primero
   useEffect(() => {
-    if (calcularHorarioConsecutivo && index > 0) {
+    if (calcularHorarioConsecutivo && currentIndex > 0) {
       for (let medIndex = 0; medIndex < numMediciones; medIndex++) {
-        const previousHorario = formData.mediciones[index - 1]?.mediciones?.[medIndex]?.horario;
-        if (previousHorario && !formData.mediciones[index]?.mediciones?.[medIndex]?.horario) {
+        const previousHorario = mediciones[currentIndex - 1]?.mediciones?.[medIndex]?.horario;
+        if (previousHorario && !mediciones[currentIndex]?.mediciones?.[medIndex]?.horario) {
           const newHorario = calculateConsecutiveHorario(previousHorario);
-          handleFieldChange(medIndex, 'horario', newHorario);
+          handleFieldChange('horario', newHorario, medIndex);
         }
       }
     }
-  }, [index, calcularHorarioConsecutivo, formData.mediciones]);
+  }, [currentIndex, calcularHorarioConsecutivo]);
 
   // Calcular el horario consecutivo sumando un minuto al horario anterior
   const calculateConsecutiveHorario = (previousHorario) => {
-    // Extraer horas y minutos del horario anterior
     const [hours, minutes] = previousHorario.split(':').map((timePart) => parseInt(timePart, 10));
-
-    // Calcular el nuevo horario sumando un minuto al anterior
     let newMinutes = minutes + 1;
     let newHours = hours;
 
@@ -57,156 +57,228 @@ function MedicionCombinada({ index, formData, handleMedicionChange, calcularHora
       newHours = (newHours + 1) % 24;
     }
 
-    // Formatear el nuevo horario con dos digitos para las horas y minutos
     const formattedHours = String(newHours).padStart(2, '0');
     const formattedMinutes = String(newMinutes).padStart(2, '0');
 
     return `${formattedHours}:${formattedMinutes}`;
   };
 
-  // Guardar las mediciones y mostrarlas en consola
-  const handleSaveMedicion = () => {
-    const formattedData = {
-      puesto: formData.mediciones[index]?.puesto,
-      identificacion: formData.mediciones[index]?.identificacion,
-      mediciones: formData.mediciones[index]?.mediciones.map((medicion, idx) => ({
-        horario: medicion.horario,
-        e1: medicion.e1,
-        e2: medicion.e2,
-        existe_pared: medicion.existe_pared,
-        e1_adicional: medicion.e1_adicional,
-        e2_adicional: medicion.e2_adicional,
-        medicionIndex: idx + 1,
-      }))
+  // Navegar al punto anterior
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  // Navegar al siguiente punto
+  const handleNext = () => {
+    if (currentIndex < mediciones.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  // Agregar un nuevo punto de medición
+  const addMedicion = () => {
+    const newMedicion = {
+      puesto: '',
+      identificacion: '',
+      mediciones: Array.from({ length: numMediciones }).map(() => ({
+        horario: '',
+        e1: '',
+        e2: '',
+        existe_pared: '',
+        e1_adicional: '',
+        e2_adicional: '',
+      })),
     };
-    console.log('Medicion guardada:', formattedData);
+    const updatedMediciones = [...mediciones, newMedicion];
+    setMediciones(updatedMediciones);
+    handleMedicionChange(updatedMediciones);
+    setCurrentIndex(updatedMediciones.length - 1);
+  };
+
+  // Eliminar el punto actual de medición
+  const eliminarPunto = () => {
+    const updatedMediciones = [...mediciones];
+    updatedMediciones.splice(currentIndex, 1);
+    setMediciones(updatedMediciones);
+    handleMedicionChange(updatedMediciones);
+    setCurrentIndex(updatedMediciones.length > 0 ? Math.max(currentIndex - 1, 0) : 0);
+  };
+
+  // Guardar la medición actual
+  const handleSaveMedicion = () => {
+    const updatedFormData = { ...formData, mediciones };
+    console.log('Datos guardados:', updatedFormData);
   };
 
   return (
     <div className="border rounded-lg shadow-sm mt-4 p-4 bg-gray-100 dark:bg-gray-800">
-      <h2 className="font-semibold mb-2 text-center">PUNTO {index + 1} (COMBINADO)</h2>
+      <h2 className="font-semibold mb-2 text-center">
+        {mediciones.length > 0 && mediciones[currentIndex]
+          ? `Punto de Medición Combinada ${currentIndex + 1}`
+          : 'No hay datos de medición'}
+      </h2>
 
-      {/* Campo de Puesto, editable por el usuario */}
-      <div className="mb-4">
-        <label className="block mb-1">PUESTO:</label>
-        <input
-          type="text"
-          name="puesto"
-          value={formData.mediciones[index]?.puesto || ''}
-          onChange={(e) => handleMedicionChange(index, 'puesto', e.target.value)}
-          className="border p-2 w-full rounded"
-        />
-      </div>
-
-      {/* Campo de Identificacion, editable por el usuario */}
-      <div className="mb-4">
-        <label className="block mb-1">IDENTIFICACION:</label>
-        <input
-          type="text"
-          name="identificacion"
-          value={formData.mediciones[index]?.identificacion || ''}
-          onChange={(e) => handleMedicionChange(index, 'identificacion', e.target.value)}
-          className="border p-2 w-full rounded"
-          required
-        />
-      </div>
-
-      {/* Mostrar los campos de horario, e1, e2 para cada medicion */}
-      {Array.from({ length: numMediciones }).map((_, medIndex) => (
-        <div key={medIndex} className="mb-6">
-          <h3 className="font-semibold mb-2">Horario {medIndex + 1} y sus Mediciones</h3>
-          {/* Horario */}
+      {/* Mostrar el punto de medición actual */}
+      {mediciones.length > 0 && mediciones[currentIndex] ? (
+        <div className="border rounded-lg p-4 mb-4 bg-white dark:bg-gray-900">
+          {/* Campo de Puesto, editable por el usuario */}
           <div className="mb-4">
-            <label className="block mb-1">HORARIO {medIndex + 1}:</label>
+            <label className="block mb-1">PUESTO:</label>
             <input
-              type="time"
-              name={`horario_${medIndex}`}
-              value={formData.mediciones[index]?.mediciones?.[medIndex]?.horario || ''}
-              onChange={(e) => handleFieldChange(medIndex, 'horario', e.target.value)}
-              className="border p-2 w-full rounded"
-              required
-              readOnly={calcularHorarioConsecutivo && index > 0} // Hacerlo solo de lectura para puntos despues del primero
+              type="text"
+              name="puesto"
+              value={mediciones[currentIndex].puesto || ''}
+              onChange={(e) => handleFieldChange('puesto', e.target.value)}
+              className="border p-2 w-full rounded bg-white"
             />
           </div>
-          {/* E2 */}
+
+          {/* Campo de Identificación, editable por el usuario */}
           <div className="mb-4">
-            <label className="block mb-1">E2 (Medicion {medIndex + 1}):</label>
+            <label className="block mb-1">IDENTIFICACIÓN:</label>
             <input
-              type="number"
-              name={`e2_${medIndex}`}
-              value={formData.mediciones[index]?.mediciones?.[medIndex]?.e2 || ''}
-              onChange={(e) => handleFieldChange(medIndex, 'e2', e.target.value)}
-              className="border p-2 w-full rounded"
-              required
-            />
-          </div>
-          {/* E1 */}
-          <div className="mb-4">
-            <label className="block mb-1">E1 (Medicion {medIndex + 1}):</label>
-            <input
-              type="number"
-              name={`e1_${medIndex}`}
-              value={formData.mediciones[index]?.mediciones?.[medIndex]?.e1 || ''}
-              onChange={(e) => handleFieldChange(medIndex, 'e1', e.target.value)}
-              className="border p-2 w-full rounded"
+              type="text"
+              name="identificacion"
+              value={mediciones[currentIndex].identificacion || ''}
+              onChange={(e) => handleFieldChange('identificacion', e.target.value)}
+              className="border p-2 w-full rounded bg-white"
               required
             />
           </div>
 
-          {/* Nueva Pregunta: ¿Existe pared? */}
-          <div className="mb-4">
-            <label className="block mb-1">¿EXISTE PARED?</label>
-            <select
-              name={`existe_pared_${medIndex}`}
-              value={formData.mediciones[index]?.mediciones?.[medIndex]?.existe_pared || ''}
-              onChange={(e) => handleFieldChange(medIndex, 'existe_pared', e.target.value)}
-              className="border p-2 w-full rounded"
-              required
-            >
-              <option value="">Selecciona una opción</option>
-              <option value="sí">Sí</option>
-              <option value="no">No</option>
-            </select>
-          </div>
-
-          {/* Campos E1 y E2 adicionales solo si 'existe_pared' es 'sí' */}
-          {formData.mediciones[index]?.mediciones?.[medIndex]?.existe_pared === 'sí' && (
-            <>
+          {/* Mostrar los campos de horario, e1, e2 para cada medición */}
+          {Array.from({ length: numMediciones }).map((_, medIndex) => (
+            <div key={medIndex} className="mb-6">
+              <h3 className="font-semibold mb-2">Horario {medIndex + 1} y sus Mediciones</h3>
+              {/* Horario */}
               <div className="mb-4">
-                <label className="block mb-1">E2 (adicional) {medIndex + 1}:</label>
+                <label className="block mb-1">HORARIO {medIndex + 1}:</label>
+                <input
+                  type="time"
+                  name={`horario_${medIndex}`}
+                  value={mediciones[currentIndex]?.mediciones?.[medIndex]?.horario || ''}
+                  onChange={(e) => handleFieldChange('horario', e.target.value, medIndex)}
+                  className="border p-2 w-full rounded bg-white"
+                  required
+                  readOnly={calcularHorarioConsecutivo && currentIndex > 0}
+                />
+              </div>
+              {/* E2 */}
+              <div className="mb-4">
+                <label className="block mb-1">E2 (Medición {medIndex + 1}):</label>
                 <input
                   type="number"
-                  name={`e2_adicional_${medIndex}`}
-                  value={formData.mediciones[index]?.mediciones?.[medIndex]?.e2_adicional || ''}
-                  onChange={(e) => handleFieldChange(medIndex, 'e2_adicional', e.target.value)}
-                  className="border p-2 w-full rounded"
+                  name={`e2_${medIndex}`}
+                  value={mediciones[currentIndex]?.mediciones?.[medIndex]?.e2 || ''}
+                  onChange={(e) => handleFieldChange('e2', e.target.value, medIndex)}
+                  className="border p-2 w-full rounded bg-white"
                   required
                 />
               </div>
+              {/* E1 */}
               <div className="mb-4">
-                <label className="block mb-1">E1 (adicional) {medIndex + 1}:</label>
+                <label className="block mb-1">E1 (Medición {medIndex + 1}):</label>
                 <input
                   type="number"
-                  name={`e1_adicional_${medIndex}`}
-                  value={formData.mediciones[index]?.mediciones?.[medIndex]?.e1_adicional || ''}
-                  onChange={(e) => handleFieldChange(medIndex, 'e1_adicional', e.target.value)}
-                  className="border p-2 w-full rounded"
+                  name={`e1_${medIndex}`}
+                  value={mediciones[currentIndex]?.mediciones?.[medIndex]?.e1 || ''}
+                  onChange={(e) => handleFieldChange('e1', e.target.value, medIndex)}
+                  className="border p-2 w-full rounded bg-white"
                   required
                 />
               </div>
-            </>
-          )}
+
+              {/* Nueva Pregunta: ¿Existe pared? */}
+              <div className="mb-4">
+                <label className="block mb-1">¿EXISTE PARED?</label>
+                <select
+                  name={`existe_pared_${medIndex}`}
+                  value={mediciones[currentIndex]?.mediciones?.[medIndex]?.existe_pared || ''}
+                  onChange={(e) => handleFieldChange('existe_pared', e.target.value, medIndex)}
+                  className="border p-2 w-full rounded bg-white"
+                  required
+                >
+                  <option value="">Selecciona una opción</option>
+                  <option value="sí">Sí</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+
+              {/* Campos E1 y E2 adicionales solo si 'existe_pared' es 'sí' */}
+              {mediciones[currentIndex]?.mediciones?.[medIndex]?.existe_pared === 'sí' && (
+                <>
+                  <div className="mb-4">
+                    <label className="block mb-1">E2 (adicional) {medIndex + 1}:</label>
+                    <input
+                      type="number"
+                      name={`e2_adicional_${medIndex}`}
+                      value={mediciones[currentIndex]?.mediciones?.[medIndex]?.e2_adicional || ''}
+                      onChange={(e) => handleFieldChange('e2_adicional', e.target.value, medIndex)}
+                      className="border p-2 w-full rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-1">E1 (adicional) {medIndex + 1}:</label>
+                    <input
+                      type="number"
+                      name={`e1_adicional_${medIndex}`}
+                      value={mediciones[currentIndex]?.mediciones?.[medIndex]?.e1_adicional || ''}
+                      onChange={(e) => handleFieldChange('e1_adicional', e.target.value, medIndex)}
+                      className="border p-2 w-full rounded bg-white"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
+      ) : (
+        <p>No hay datos de medición</p>
+      )}
 
-      {/* Boton para guardar la medicion */}
+      {/* Botones de navegación y guardar */}
       <div className="mt-4 text-center">
         <button
           type="button"
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="bg-gray-500 text-white px-4 py-2 mr-2 rounded-lg hover:bg-gray-700 transition duration-300"
+          onClick={handlePrevious}
+          disabled={currentIndex === 0}
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          className="bg-blue-500 text-white px-4 py-2 mr-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          onClick={handleNext}
+          disabled={currentIndex >= mediciones.length - 1}
+        >
+          Siguiente
+        </button>
+        <button
+          type="button"
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300"
           onClick={handleSaveMedicion}
         >
-          Guardar Mediciones
+          Guardar Medición
+        </button>
+        <button
+          type="button"
+          className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          onClick={addMedicion}
+        >
+          Agregar Punto
+        </button>
+        <button
+          type="button"
+          className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-700 transition duration-300"
+          onClick={eliminarPunto}
+          disabled={mediciones.length === 0}
+        >
+          Eliminar Punto
         </button>
       </div>
     </div>

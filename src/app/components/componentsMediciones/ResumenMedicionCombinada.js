@@ -22,30 +22,36 @@ function ResumenMedicionCombinada({ area }) {
             area.mediciones.map((medicion, idx) => (
               <React.Fragment key={idx}>
                 <tr className="border-b-4 border-gray-900">
-                  <td className="py-2 px-4 border-b" rowSpan={medicion.mediciones.length + 1}>
+                  <td className="py-2 px-4 border-b" rowSpan={(medicion.mediciones?.length || 0) + 1}>
                     Punto {idx + 1}
                   </td>
-                  <td className="py-2 px-4 border-b" rowSpan={medicion.mediciones.length + 1}>
+                  <td className="py-2 px-4 border-b" rowSpan={(medicion.mediciones?.length || 0) + 1}>
                     {medicion.puesto || 'N/A'}
                   </td>
-                  <td className="py-2 px-4 border-b" rowSpan={medicion.mediciones.length + 1}>
+                  <td className="py-2 px-4 border-b" rowSpan={(medicion.mediciones?.length || 0) + 1}>
                     {medicion.identificacion || 'N/A'}
                   </td>
                 </tr>
-                {medicion.mediciones.map((detalle, detalleIdx) => (
-                  <tr key={`${idx}-${detalleIdx}`}>
-                    <td className="py-2 px-4 border-b">{detalle.horario || 'N/A'}</td>
-                    <td className="py-2 px-4 border-b">{detalle.e2 || 'N/A'}</td>
-                    <td className="py-2 px-4 border-b">{detalle.e1 || 'N/A'}</td>
-                    <td className="py-2 px-4 border-b">{detalle.existe_pared || 'N/A'}</td>
-                    <td className="py-2 px-4 border-b">
-                      {detalle.existe_pared === 'sí' ? detalle.e2_adicional : 'N/A'}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {detalle.existe_pared === 'sí' ? detalle.e1_adicional : 'N/A'}
-                    </td>
+                {medicion.mediciones && medicion.mediciones.length > 0 ? (
+                  medicion.mediciones.map((detalle, detalleIdx) => (
+                    <tr key={`${idx}-${detalleIdx}`}>
+                      <td className="py-2 px-4 border-b">{detalle.horario || 'N/A'}</td>
+                      <td className="py-2 px-4 border-b">{detalle.e2 || 'N/A'}</td>
+                      <td className="py-2 px-4 border-b">{detalle.e1 || 'N/A'}</td>
+                      <td className="py-2 px-4 border-b">{detalle.existe_pared || 'N/A'}</td>
+                      <td className="py-2 px-4 border-b">
+                        {detalle.existe_pared === 'sí' ? detalle.e2_adicional : 'N/A'}
+                      </td>
+                      <td className="py-2 px-4 border-b">
+                        {detalle.existe_pared === 'sí' ? detalle.e1_adicional : 'N/A'}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="py-2 px-4 border-b text-center">No hay detalles de medición</td>
                   </tr>
-                ))}
+                )}
               </React.Fragment>
             ))
           ) : (

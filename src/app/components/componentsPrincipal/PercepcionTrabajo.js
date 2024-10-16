@@ -36,7 +36,7 @@ const PercepcionTrabajo = ({ formData, handleChange, visible, toggleSection }) =
               />
             </div>
             <div>
-              <label>Puesto del Trabajador:</label>
+              <label>PUESTO DEL TRABAJADOR:</label>
               <textarea
                 name="reportes"
                 value={formData.reportes}

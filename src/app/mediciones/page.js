@@ -4,8 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import IdAreaMediciones from '../components/componentsMediciones/idareaMediciones';
 import IluminacionMediciones from '../components/componentsMediciones/IluminacionMediciones';
 import MedicionItem from '../components/componentsMediciones/MedicionItem';
-import MedicionCombinada from '../components/componentsMediciones/MedicionCombinada';
-import MedicionArtificial from '../components/componentsMediciones/MedicionArtificial';
 import ResumenMediciones from '../components/componentsMediciones/ResumenMediciones';
 
 export default function Mediciones() {
@@ -16,7 +14,6 @@ export default function Mediciones() {
     cci: 'SÍ',
     area: '',
     departamento: '',
-    numeroPuntos: '',
     mediciones: [],
   });
 
@@ -32,8 +29,6 @@ export default function Mediciones() {
 
   useEffect(() => {
     const areaIluminada = searchParams.get('areaIluminada') || '';
-    console.log('Área iluminada antes de establecer:', areaIluminada);
-
     if (areaIluminada) {
       setFormData((prev) => ({ ...prev, area: areaIluminada }));
     }
@@ -65,7 +60,6 @@ export default function Mediciones() {
         ...prev,
         area: selectedArea.areaIluminada,
         departamento: selectedArea.departamento || '',
-        numeroPuntos: selectedArea.numPuntosEvaluar || '',
         tipoIluminacion: selectedArea.tipoIluminacion || 'ARTIFICIAL',
         cci: selectedArea.cci || 'SÍ',
         mediciones: selectedArea.mediciones || [],
@@ -73,47 +67,11 @@ export default function Mediciones() {
     }
   };
 
-  const handleMedicionChange = (index, field, value) => {
-    setFormData((prevFormData) => {
-      const newMediciones = [...prevFormData.mediciones];
-      if (!newMediciones[index]) {
-        newMediciones[index] = { mediciones: [] };
-      }
-      newMediciones[index][field] = value;
-
-      // Si se está cambiando el horario manualmente en el primer punto, actualizar los horarios consecutivos
-      if (field === 'horario_0' && index === 0) {
-        for (let i = 1; i < newMediciones.length; i++) {
-          newMediciones[i]['horario_0'] = calculateConsecutiveHorario(newMediciones[i - 1]['horario_0']);
-        }
-      }
-
-      return { ...prevFormData, mediciones: newMediciones };
-    });
-  };
-
-  const calculateConsecutiveHorario = (previousHorario) => {
-    if (!previousHorario || previousHorario === '') {
-      return '00:00'; // Valor por defecto si no hay horario previo
-    }
-
-    // Extraer horas y minutos del horario anterior
-    const [hours, minutes] = previousHorario.split(':').map((timePart) => parseInt(timePart, 10));
-
-    // Calcular el nuevo horario sumando un minuto al anterior
-    let newMinutes = minutes + 1;
-    let newHours = hours;
-
-    if (newMinutes >= 60) {
-      newMinutes = 0;
-      newHours = (newHours + 1) % 24;
-    }
-
-    // Formatear el nuevo horario con dos dígitos para las horas y minutos
-    const formattedHours = String(newHours).padStart(2, '0');
-    const formattedMinutes = String(newMinutes).padStart(2, '0');
-
-    return `${formattedHours}:${formattedMinutes}`;
+  const handleMedicionChange = (updatedMediciones) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      mediciones: updatedMediciones,
+    }));
   };
 
   const handleSaveMediciones = () => {
@@ -123,7 +81,6 @@ export default function Mediciones() {
           ...area,
           mediciones: formData.mediciones,
           departamento: formData.departamento,
-          numPuntosEvaluar: formData.numeroPuntos,
         };
       }
       return area;
@@ -136,16 +93,12 @@ export default function Mediciones() {
     setShowSummary(true);
   };
 
-  const siguientePunto = () => {
-    if (currentMedicionIndex < parseInt(formData.numeroPuntos || 0, 10) - 1) {
-      setCurrentMedicionIndex(currentMedicionIndex + 1);
-    }
-  };
-
-  const anteriorPunto = () => {
-    if (currentMedicionIndex > 0) {
-      setCurrentMedicionIndex(currentMedicionIndex - 1);
-    }
+  const handleSaveAndUpdateSummary = () => {
+    handleSaveMediciones();
+    setShowSummary(false);
+    setTimeout(() => {
+      setShowSummary(true);
+    }, 0);
   };
 
   const handleSummaryAreaSelect = (e) => {
@@ -163,7 +116,7 @@ export default function Mediciones() {
             toggleSection={toggleSection}
             visibleSections={visibleSections}
             areas={areas}
-            handleAreaSelect={handleAreaSelect} // Pasar la función handleAreaSelect como prop
+            handleAreaSelect={handleAreaSelect}
           />
 
           <IdAreaMediciones
@@ -173,52 +126,36 @@ export default function Mediciones() {
             visibleSections={visibleSections}
           />
 
-          {formData.numeroPuntos > 0 && (
-            formData.tipoIluminacion === 'COMBINADA' ? (
-              <MedicionCombinada
-                key={currentMedicionIndex}
-                index={currentMedicionIndex}
-                formData={formData}
-                handleMedicionChange={handleMedicionChange}
-                calcularHorarioConsecutivo={true}
-              />
-            ) : (
-              <MedicionArtificial
-                key={currentMedicionIndex}
-                index={currentMedicionIndex}
-                formData={formData}
-                handleMedicionChange={handleMedicionChange}
-                calcularHorarioConsecutivo={true}
-              />
-            )
+          {formData.mediciones.length > 0 ? (
+            <MedicionItem
+              key={currentMedicionIndex}
+              index={currentMedicionIndex}
+              formData={formData}
+              handleMedicionChange={handleMedicionChange}
+            />
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-500 mb-4">No hay puntos de medición. Por favor, agrega un nuevo punto.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  handleMedicionChange([...formData.mediciones, {}]);
+                  setCurrentMedicionIndex(formData.mediciones.length);
+                }}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg"
+              >
+                Agregar Primer Punto
+              </button>
+            </div>
           )}
-
-          <div className="flex justify-between mt-4">
-            <button
-              type="button"
-              onClick={anteriorPunto}
-              className="bg-gray-500 text-white px-4 py-2 rounded"
-              disabled={currentMedicionIndex === 0}
-            >
-              Anterior Punto
-            </button>
-            <button
-              type="button"
-              onClick={siguientePunto}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              disabled={currentMedicionIndex >= parseInt(formData.numeroPuntos || 0, 10) - 1}
-            >
-              Siguiente Punto
-            </button>
-          </div>
 
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={handleSaveMediciones}
-              className="bg-purple-500 text-white px-4 py-2 rounded"
+              onClick={handleSaveAndUpdateSummary}
+              className="bg-purple-500 text-white px-4 py-2 rounded-lg"
             >
-              Resumen de Mediciones
+              Ver Resumen
             </button>
           </div>
         </form>
