@@ -9,17 +9,17 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
     setMediciones(formData.mediciones || []);
   }, [formData.mediciones]);
 
-  // Manejar los cambios de los campos de medición específicos
+  // Manejar los cambios de los campos de medicion especificos
   const handleFieldChange = (field, value, medIndex = null) => {
     const updatedMediciones = [...mediciones];
     if (medIndex === null) {
-      // Actualizar los campos generales (puesto, identificación, etc.)
+      // Actualizar los campos generales (puesto, identificacion, etc.)
       if (!updatedMediciones[currentIndex]) {
         updatedMediciones[currentIndex] = { mediciones: [] };
       }
       updatedMediciones[currentIndex][field] = value;
     } else {
-      // Actualizar los campos de mediciones específicas
+      // Actualizar los campos de mediciones especificas
       if (!updatedMediciones[currentIndex].mediciones) {
         updatedMediciones[currentIndex].mediciones = [];
       }
@@ -33,7 +33,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
     handleMedicionChange(updatedMediciones);
   };
 
-  // Generar automáticamente los horarios para cada punto después del primero
+  // Generar automaticamente los horarios para cada punto despues del primero
   useEffect(() => {
     if (calcularHorarioConsecutivo && currentIndex > 0) {
       for (let medIndex = 0; medIndex < numMediciones; medIndex++) {
@@ -77,7 +77,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
     }
   };
 
-  // Agregar un nuevo punto de medición
+  // Agregar un nuevo punto de medicion
   const addMedicion = () => {
     const newMedicion = {
       puesto: '',
@@ -97,7 +97,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
     setCurrentIndex(updatedMediciones.length - 1);
   };
 
-  // Eliminar el punto actual de medición
+  // Eliminar el punto actual de medicion
   const eliminarPunto = () => {
     const updatedMediciones = [...mediciones];
     updatedMediciones.splice(currentIndex, 1);
@@ -106,7 +106,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
     setCurrentIndex(updatedMediciones.length > 0 ? Math.max(currentIndex - 1, 0) : 0);
   };
 
-  // Guardar la medición actual
+  // Guardar la medicion actual
   const handleSaveMedicion = () => {
     const updatedFormData = { ...formData, mediciones };
     console.log('Datos guardados:', updatedFormData);
@@ -117,10 +117,10 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
       <h2 className="font-semibold mb-2 text-center">
         {mediciones.length > 0 && mediciones[currentIndex]
           ? `Punto de Medición Combinada ${currentIndex + 1}`
-          : 'No hay datos de medición'}
+          : 'No hay datos de medicion'}
       </h2>
 
-      {/* Mostrar el punto de medición actual */}
+      {/* Mostrar el punto de medicion actual */}
       {mediciones.length > 0 && mediciones[currentIndex] ? (
         <div className="border rounded-lg p-4 mb-4 bg-white dark:bg-gray-900">
           {/* Campo de Puesto, editable por el usuario */}
@@ -135,7 +135,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
             />
           </div>
 
-          {/* Campo de Identificación, editable por el usuario */}
+          {/* Campo de Identificacion, editable por el usuario */}
           <div className="mb-4">
             <label className="block mb-1">IDENTIFICACIÓN:</label>
             <input
@@ -148,7 +148,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
             />
           </div>
 
-          {/* Mostrar los campos de horario, e1, e2 para cada medición */}
+          {/* Mostrar los campos de horario, e1, e2 para cada medicion */}
           {Array.from({ length: numMediciones }).map((_, medIndex) => (
             <div key={medIndex} className="mb-6">
               <h3 className="font-semibold mb-2">Horario {medIndex + 1} y sus Mediciones</h3>
@@ -167,7 +167,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
               </div>
               {/* E2 */}
               <div className="mb-4">
-                <label className="block mb-1">E2 (Medición {medIndex + 1}):</label>
+                <label className="block mb-1">E2 (Medicion {medIndex + 1}):</label>
                 <input
                   type="number"
                   name={`e2_${medIndex}`}
@@ -179,7 +179,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
               </div>
               {/* E1 */}
               <div className="mb-4">
-                <label className="block mb-1">E1 (Medición {medIndex + 1}):</label>
+                <label className="block mb-1">E1 (Medicion {medIndex + 1}):</label>
                 <input
                   type="number"
                   name={`e1_${medIndex}`}
@@ -237,14 +237,14 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
           ))}
         </div>
       ) : (
-        <p>No hay datos de medición</p>
+        <p>No hay datos de medicion</p>
       )}
 
-      {/* Botones de navegación y guardar */}
-      <div className="mt-4 text-center">
+      {/* Botones de navegacion y guardar */}
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
         <button
           type="button"
-          className="bg-gray-500 text-white px-4 py-2 mr-2 rounded-lg hover:bg-gray-700 transition duration-300"
+          className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-gray-700 transition duration-300"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
         >
@@ -252,7 +252,7 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
         </button>
         <button
           type="button"
-          className="bg-blue-500 text-white px-4 py-2 mr-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="bg-blue-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-blue-700 transition duration-300"
           onClick={handleNext}
           disabled={currentIndex >= mediciones.length - 1}
         >
@@ -260,21 +260,21 @@ function MedicionCombinada({ formData, handleMedicionChange, calcularHorarioCons
         </button>
         <button
           type="button"
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300"
+          className="bg-green-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-green-700 transition duration-300"
           onClick={handleSaveMedicion}
         >
-          Guardar Medición
+          Guardar Medicion
         </button>
         <button
           type="button"
-          className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="bg-blue-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-blue-700 transition duration-300"
           onClick={addMedicion}
         >
           Agregar Punto
         </button>
         <button
           type="button"
-          className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-700 transition duration-300"
+          className="bg-red-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-red-700 transition duration-300"
           onClick={eliminarPunto}
           disabled={mediciones.length === 0}
         >

@@ -6,6 +6,7 @@ import DimensionesArea from '../components/componentsPrincipal/DimensionesArea';
 import Luminaria from '../components/componentsPrincipal/Luminaria';
 import PercepcionTrabajo from '../components/componentsPrincipal/PercepcionTrabajo';
 import FormularioPuestos from '../components/componentsPrincipal/FormularioPuestos';
+import ResumenAreas from '../components/componentsPrincipal/ResumenAreas';
 
 export default function Reconocimiento() {
   const [areas, setAreas] = useState([]);
@@ -84,6 +85,12 @@ export default function Reconocimiento() {
       puestoGeneral: false,
     });
     setSuccessMessage('');
+  };
+
+  const deleteArea = (id) => {
+    setAreas((prevAreas) => prevAreas.filter((area) => area.idArea !== id));
+    setCurrentAreaIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : 0));
+    setSuccessMessage('Área eliminada con éxito');
   };
 
   const toggleSection = (section) => {
@@ -232,33 +239,33 @@ export default function Reconocimiento() {
           {areas.length > 0 && currentAreaIndex < areas.length && (
             <>
               <h2 className="text-xl font-bold mb-4 text-black dark:text-white text-center">Área {areas[currentAreaIndex].idArea}</h2>
-              <IdentificacionArea
-                formData={areas[currentAreaIndex]}
-                handleChange={handleChange}
-                visible={visibleSections.identificacion}
-                toggleSection={() => toggleSection('identificacion')}
-              />
-              <DimensionesArea
-                formData={areas[currentAreaIndex]}
-                handleChange={handleChange}
-                visible={visibleSections.dimensiones}
-                toggleSection={() => toggleSection('dimensiones')}
-                calculateMinAreas={calculateMinAreas}
-                calculateMaxAreas={calculateMaxAreas}
-              />
-              <Luminaria
-                formData={areas[currentAreaIndex]}
-                handleChange={handleChange}
-                visible={visibleSections.luminarias}
-                toggleSection={() => toggleSection('luminarias')}
-              />
-              <PercepcionTrabajo
-                formData={areas[currentAreaIndex]}
-                handleChange={handleChange}
-                visible={visibleSections.percepcion}
-                toggleSection={() => toggleSection('percepcion')}
-              />
-              <div className="mb-4">
+              <div className="space-y-2">
+                <IdentificacionArea
+                  formData={areas[currentAreaIndex]}
+                  handleChange={handleChange}
+                  visible={visibleSections.identificacion}
+                  toggleSection={() => toggleSection('identificacion')}
+                />
+                <DimensionesArea
+                  formData={areas[currentAreaIndex]}
+                  handleChange={handleChange}
+                  visible={visibleSections.dimensiones}
+                  toggleSection={() => toggleSection('dimensiones')}
+                  calculateMinAreas={calculateMinAreas}
+                  calculateMaxAreas={calculateMaxAreas}
+                />
+                <Luminaria
+                  formData={areas[currentAreaIndex]}
+                  handleChange={handleChange}
+                  visible={visibleSections.luminarias}
+                  toggleSection={() => toggleSection('luminarias')}
+                />
+                <PercepcionTrabajo
+                  formData={areas[currentAreaIndex]}
+                  handleChange={handleChange}
+                  visible={visibleSections.percepcion}
+                  toggleSection={() => toggleSection('percepcion')}
+                />
                 <button
                   type="button"
                   className="bg-red-500 text-white w-full px-4 py-2 rounded-lg"
@@ -282,11 +289,20 @@ export default function Reconocimiento() {
               </div>
             </>
           )}
-          <div className="flex justify-between mt-4">
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              className="bg-blue-500 text-white px-4 py-2 rounded sm:w-auto"
+            >
+              Guardar Todos los Datos
+            </button>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             <button
               type="button"
               onClick={goToPreviousArea}
-              className="bg-gray-500 text-white px-4 py-2 rounded"
+              className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto"
               disabled={currentAreaIndex === 0}
             >
               Área Anterior
@@ -294,133 +310,54 @@ export default function Reconocimiento() {
             <button
               type="button"
               onClick={goToNextArea}
-              className="bg-gray-500 text-white px-4 py-2 rounded"
+              className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto"
               disabled={currentAreaIndex === areas.length - 1}
             >
               Siguiente Área
             </button>
-          </div>
-          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={addArea}
-              className="bg-green-500 text-white px-4 py-2 rounded"
+              className="bg-green-500 text-white px-4 py-2 rounded sm:w-auto"
             >
               Agregar Nueva Área
             </button>
-          </div>
-          <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={handleSaveAll}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => deleteArea(areas[currentAreaIndex].idArea)}
+              className="bg-red-500 text-white px-4 py-2 rounded sm:w-auto"
+              disabled={areas.length === 1}
             >
-              Guardar Todos los Datos
+              Eliminar Área
             </button>
           </div>
-          <div className="mt-4 text-center">
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             <Link href={{
               pathname: '/mediciones',
               query: { areaIluminada: areas[currentAreaIndex]?.areaIluminada || '' }
             }}>
-              <button className="bg-orange-500 text-white px-4 py-2 rounded">Ir a Mediciones</button>
+              <button className="bg-orange-500 text-white px-4 py-2 rounded sm:w-auto">Ir a Mediciones</button>
             </Link>
-          </div>
-          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={handleShowSummary}
-              className="bg-purple-500 text-white px-4 py-2 rounded"
+              className="bg-purple-500 text-white px-4 py-2 rounded sm:w-auto"
             >
               Mostrar Resumen
             </button>
           </div>
-          <div className="mt-4 text-center">
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             <button
               type="button"
               onClick={clearLocalStorage}
-              className="bg-red-500 text-white px-4 py-2 rounded"
+              className="bg-red-500 text-white px-4 py-2 rounded sm:w-auto"
             >
               Limpiar Datos Guardados
             </button>
           </div>
         </form>
       ) : (
-        <div className="bg-gray-100 p-4 mt-4 rounded-lg">
-          <h2 className="text-xl font-bold mb-4 text-black dark:text-white text-center">Resumen de Todas las Áreas</h2>
-          <div className="overflow-x-auto w-full">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">Área</th>
-                  <th className="py-2 px-4 border-b">Área Iluminada</th>
-                  <th className="py-2 px-4 border-b">Núm. Puntos a Evaluar</th>
-                  <th className="py-2 px-4 border-b">Tipo de Iluminación</th>
-                  <th className="py-2 px-4 border-b">Altura</th>
-                  <th className="py-2 px-4 border-b">Largo</th>
-                  <th className="py-2 px-4 border-b">Ancho</th>
-                  <th className="py-2 px-4 border-b">Tipo de Luminaria</th>
-                  <th className="py-2 px-4 border-b">Potencia</th>
-                  <th className="py-2 px-4 border-b">Cantidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {areas.map((area, index) => (
-                  <>
-                    <tr key={`area-${index}`} className="bg-gray-100">
-                      <td className="py-2 px-4 border-b">Área {area.idArea}</td>
-                      <td className="py-2 px-4 border-b">{area.areaIluminada}</td>
-                      <td className="py-2 px-4 border-b">{area.numPuntosEvaluar}</td>
-                      <td className="py-2 px-4 border-b">{area.tipoIluminacion}</td>
-                      <td className="py-2 px-4 border-b">{area.altura}</td>
-                      <td className="py-2 px-4 border-b">{area.largo}</td>
-                      <td className="py-2 px-4 border-b">{area.ancho}</td>
-                      <td className="py-2 px-4 border-b">{area.tipoLuminaria}</td>
-                      <td className="py-2 px-4 border-b">{area.potencia}</td>
-                      <td className="py-2 px-4 border-b">{area.cantidad}</td>
-                    </tr>
-                    {area.puestos.length > 0 && (
-                      <tr key={`puestos-${index}`} className="bg-white">
-                        <td colSpan="10" className="py-2 px-4 border-b">
-                          <h4 className="text-lg font-bold mt-4">Datos del Puesto - Área {area.idArea}:</h4>
-                          <div className="overflow-x-auto w-full">
-                            <table className="min-w-full bg-gray-100">
-                              <thead>
-                                <tr>
-                                  <th className="py-2 px-4 border-b">Puesto del Trabajador</th>
-                                  <th className="py-2 px-4 border-b">Número de Trabajadores</th>
-                                  <th className="py-2 px-4 border-b">Descripción de Actividades</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {area.puestos.map((puesto, puestoIndex) => (
-                                  <tr key={`puesto-${index}-${puestoIndex}`} className="bg-white">
-                                    <td className="py-2 px-4 border-b">{puesto.puestoTrabajador || 'No disponible'}</td>
-                                    <td className="py-2 px-4 border-b">{puesto.numTrabajadores || 'No disponible'}</td>
-                                    <td className="py-2 px-4 border-b">{puesto.descripcionActividades || 'No disponible'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setShowSummary(false)}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Volver a Editar
-            </button>
-          </div>
-        </div>
+        <ResumenAreas areas={areas} setShowSummary={setShowSummary} />
       )}
     </div>
   );

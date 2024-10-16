@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import IdAreaMediciones from '../components/componentsMediciones/idareaMediciones';
 import IluminacionMediciones from '../components/componentsMediciones/IluminacionMediciones';
 import MedicionItem from '../components/componentsMediciones/MedicionItem';
@@ -8,6 +8,7 @@ import ResumenMediciones from '../components/componentsMediciones/ResumenMedicio
 
 export default function Mediciones() {
   const searchParams = useSearchParams();
+  const router = useRouter(); // Use router to navigate between pages
   const [areas, setAreas] = useState([]);
   const [formData, setFormData] = useState({
     tipoIluminacion: 'ARTIFICIAL',
@@ -90,15 +91,11 @@ export default function Mediciones() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('areas', JSON.stringify(updatedAreas));
     }
-    setShowSummary(true);
   };
 
   const handleSaveAndUpdateSummary = () => {
     handleSaveMediciones();
-    setShowSummary(false);
-    setTimeout(() => {
-      setShowSummary(true);
-    }, 0);
+    setShowSummary(true);
   };
 
   const handleSummaryAreaSelect = (e) => {
@@ -156,6 +153,13 @@ export default function Mediciones() {
               className="bg-purple-500 text-white px-4 py-2 rounded-lg"
             >
               Ver Resumen
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/reconocimiento')}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg ml-4"
+            >
+              Volver a Reconocimiento
             </button>
           </div>
         </form>

@@ -232,10 +232,10 @@ function MedicionArtificial({ formData, handleMedicionChange, calcularHorarioCon
       )}
 
       {/* Botones de Navegación y Guardado */}
-      <div className="mt-4 text-center">
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
         <button
           type="button"
-          className="bg-gray-500 text-white px-4 py-2 mr-2 rounded-lg hover:bg-gray-700 transition duration-300"
+          className="bg-gray-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-gray-700 transition duration-300"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
         >
@@ -243,7 +243,7 @@ function MedicionArtificial({ formData, handleMedicionChange, calcularHorarioCon
         </button>
         <button
           type="button"
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="bg-blue-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-blue-700 transition duration-300"
           onClick={handleNext}
           disabled={currentIndex === mediciones.length - 1}
         >
@@ -251,21 +251,21 @@ function MedicionArtificial({ formData, handleMedicionChange, calcularHorarioCon
         </button>
         <button
           type="button"
-          className="bg-green-500 text-white px-4 py-2 ml-4 rounded-lg hover:bg-green-700 transition duration-300"
+          className="bg-green-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-green-700 transition duration-300"
           onClick={handleSaveMedicion}
         >
           Guardar Medición
         </button>
         <button
           type="button"
-          className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="bg-blue-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-blue-700 transition duration-300"
           onClick={addMedicion}
         >
           Agregar Punto
         </button>
         <button
           type="button"
-          className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-700 transition duration-300"
+          className="bg-red-500 text-white px-4 py-2 rounded sm:w-auto hover:bg-red-700 transition duration-300"
           onClick={deleteMedicion}
           disabled={mediciones.length === 0}
         >
